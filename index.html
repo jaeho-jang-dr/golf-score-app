@@ -1,0 +1,2063 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="골프 스코어">
+    <meta name="theme-color" content="#1a5f3f">
+    <link rel="apple-touch-icon" sizes="180x180" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='50' font-size='50'>⛳</text></svg>">
+    <title>⛳ 골프 스코어</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+            background: #1a5f3f;
+            color: #fff;
+            height: 100vh;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+        }
+        
+        .app {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        
+        /* 헤더 */
+        .header {
+            background: linear-gradient(180deg, #1a5f3f 0%, #2e7d32 100%);
+            padding: env(safe-area-inset-top) 15px 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            z-index: 100;
+        }
+        
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .mode-toggle {
+            background: rgba(255,255,255,0.2);
+            border-radius: 25px;
+            padding: 4px;
+            display: flex;
+            gap: 4px;
+        }
+        
+        .mode-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            background: transparent;
+            color: rgba(255,255,255,0.7);
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .mode-btn.active {
+            background: white;
+            color: #1a5f3f;
+        }
+        
+        .hole-info {
+            display: flex;
+            justify-content: space-around;
+            background: rgba(0,0,0,0.2);
+            border-radius: 15px;
+            padding: 10px;
+        }
+        
+        .hole-stat {
+            text-align: center;
+            flex: 1;
+        }
+        
+        .hole-stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #4caf50;
+        }
+        
+        .hole-stat-label {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        
+        /* 메인 콘텐츠 */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 15px;
+            padding-bottom: 180px;
+        }
+        
+        /* 골퍼 카드 */
+        .golfer-card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 15px;
+            color: #333;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .golfer-card.active {
+            transform: scale(1.02);
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
+            border: 3px solid #4caf50;
+        }
+        
+        .golfer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .golfer-name {
+            font-size: 22px;
+            font-weight: bold;
+            color: #1a5f3f;
+        }
+        
+        .golfer-total {
+            font-size: 32px;
+            font-weight: bold;
+            color: #4caf50;
+        }
+        
+        .current-hole-score {
+            background: #fff3e0;
+            padding: 12px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 18px;
+            color: #f57c00;
+            font-weight: 600;
+        }
+        
+        .score-dots {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 5px 0;
+        }
+        
+        .score-dot {
+            min-width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            transition: all 0.2s;
+            position: relative;
+        }
+        
+        .score-dot.completed {
+            background: #2196f3;
+            color: white;
+        }
+        
+        .score-dot.current {
+            background: #4caf50;
+            color: white;
+            transform: scale(1.2);
+            box-shadow: 0 4px 10px rgba(76, 175, 80, 0.5);
+        }
+        
+        .hole-label {
+            position: absolute;
+            top: -8px;
+            font-size: 10px;
+            color: #666;
+        }
+        
+        /* 하단 고정 영역 */
+        .bottom-section {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(180deg, rgba(26, 95, 63, 0.95) 0%, #1a5f3f 100%);
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            padding-bottom: calc(15px + env(safe-area-inset-bottom));
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.3);
+            z-index: 100;
+        }
+        
+        /* 음성 인식 버튼 */
+        .voice-section {
+            margin-bottom: 15px;
+        }
+        
+        .voice-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+            color: white;
+            border: none;
+            padding: 20px;
+            border-radius: 25px;
+            font-size: 20px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+            transition: all 0.3s;
+        }
+        
+        .voice-btn.listening {
+            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 4px 15px rgba(244, 67, 54, 0.4); }
+            50% { transform: scale(1.05); box-shadow: 0 8px 25px rgba(244, 67, 54, 0.6); }
+            100% { transform: scale(1); box-shadow: 0 4px 15px rgba(244, 67, 54, 0.4); }
+        }
+        
+        .transcript {
+            background: rgba(255,255,255,0.1);
+            padding: 10px;
+            border-radius: 10px;
+            margin-top: 10px;
+            font-size: 14px;
+            text-align: center;
+            min-height: 30px;
+            color: rgba(255,255,255,0.9);
+        }
+        
+        /* 빠른 액션 버튼들 */
+        .quick-actions {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .quick-btn {
+            flex: 1;
+            min-width: 80px;
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 15px;
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        
+        .quick-btn:active {
+            transform: scale(0.95);
+            background: rgba(255,255,255,0.3);
+        }
+        
+        /* 모달 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px);
+        }
+        
+        .modal-content {
+            background: white;
+            margin: 20vh auto;
+            padding: 30px;
+            border-radius: 25px;
+            width: 90%;
+            max-width: 300px;
+            text-align: center;
+            color: #333;
+            animation: slideUp 0.3s;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(100px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #1a5f3f;
+        }
+        
+        .modal-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 15px;
+            font-size: 24px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .modal-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        
+        .modal-btn.save {
+            background: #4caf50;
+            color: white;
+        }
+        
+        .modal-btn.cancel {
+            background: #666;
+            color: white;
+        }
+        
+        .modal-btn.delete {
+            background: #f44336;
+            color: white;
+        }
+        
+        /* 수동 입력 모달 */
+        .manual-input-modal {
+            background: white;
+            margin: 5vh auto;
+            padding: 25px;
+            border-radius: 20px;
+            width: 95%;
+            max-width: 450px;
+            color: #333;
+            animation: slideUp 0.3s;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .manual-section {
+            margin-bottom: 20px;
+        }
+        
+        .manual-section h4 {
+            color: #1a5f3f;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        
+        .golfer-select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+        
+        .hole-score-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .hole-input, .score-input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            text-align: center;
+        }
+        
+        /* 탭 스타일 */
+        .tab-buttons {
+            display: flex;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid #1a5f3f;
+        }
+        
+        .tab-btn {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            background: white;
+            color: #1a5f3f;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .tab-btn.active {
+            background: #1a5f3f;
+            color: white;
+        }
+        
+        .tab-content {
+            animation: fadeIn 0.3s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* 골퍼 관리 스타일 */
+        .golfer-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 10px;
+            background: #f9f9f9;
+        }
+        
+        .golfer-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 8px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        
+        .golfer-name {
+            font-weight: bold;
+            color: #1a5f3f;
+        }
+        
+        .golfer-actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .golfer-action-btn {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .edit-btn {
+            background: #2196f3;
+            color: white;
+        }
+        
+        .delete-btn {
+            background: #f44336;
+            color: white;
+        }
+        
+        .add-golfer-input {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .golfer-name-input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
+        .add-golfer-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            background: #4caf50;
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        /* 팝업 메뉴 */
+        .popup-menu {
+            display: none;
+            position: fixed;
+            background: white;
+            border-radius: 20px;
+            padding: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            z-index: 200;
+        }
+        
+        .popup-item {
+            padding: 15px 20px;
+            border-radius: 15px;
+            color: #333;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .popup-item:active {
+            background: #f5f5f5;
+        }
+        
+        /* 피드백 메시지 */
+        .feedback {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 25px;
+            font-size: 18px;
+            font-weight: bold;
+            z-index: 2000;
+            animation: fadeInOut 2s;
+        }
+        
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+            20% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+        }
+        
+        /* 홈 화면 추가 안내 */
+        .install-prompt {
+            background: rgba(255,255,255,0.95);
+            color: #333;
+            padding: 15px;
+            border-radius: 15px;
+            margin: 15px;
+            text-align: center;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .install-prompt strong {
+            color: #1a5f3f;
+        }
+        
+        /* 빈 상태 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 30px;
+            color: rgba(255,255,255,0.8);
+        }
+        
+        .empty-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+        
+        .empty-text {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        
+        .empty-hint {
+            font-size: 14px;
+            opacity: 0.7;
+        }
+        
+        /* 빠른 입력 패널 */
+        .quick-input-panel {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 25px 25px 0 0;
+            padding: 20px;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.3);
+            z-index: 500;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+        
+        .quick-input-panel.show {
+            transform: translateY(0);
+        }
+        
+        .quick-input-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #1a5f3f;
+        }
+        
+        .close-quick-btn {
+            background: #f44336;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .score-buttons {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .score-btn {
+            padding: 15px 10px;
+            border: 2px solid #1a5f3f;
+            border-radius: 15px;
+            background: white;
+            color: #1a5f3f;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        
+        .score-btn:active {
+            background: #1a5f3f;
+            color: white;
+            transform: scale(0.95);
+        }
+        
+        .voice-input-simple {
+            text-align: center;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 15px;
+        }
+        
+        .simple-voice-btn {
+            padding: 12px 25px;
+            border: 2px solid #1a5f3f;
+            border-radius: 25px;
+            background: white;
+            color: #1a5f3f;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .simple-voice-btn.listening {
+            background: #1a5f3f;
+            color: white;
+            animation: pulse 1.5s infinite;
+        }
+        
+        .simple-transcript {
+            font-size: 14px;
+            color: #666;
+            min-height: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- 헤더 -->
+        <div class="header">
+            <div class="header-top">
+                <div class="logo">⛳ 골프 스코어</div>
+                <div class="mode-toggle">
+                    <button class="mode-btn active" onclick="setMode('golfer')">골퍼</button>
+                    <button class="mode-btn" onclick="setMode('score')">스코어</button>
+                </div>
+            </div>
+            <div class="hole-info">
+                <div class="hole-stat">
+                    <div class="hole-stat-value" id="currentHole">1</div>
+                    <div class="hole-stat-label">현재 홀</div>
+                </div>
+                <div class="hole-stat">
+                    <div class="hole-stat-value" id="totalHoles">18</div>
+                    <div class="hole-stat-label">전체 홀</div>
+                </div>
+                <div class="hole-stat">
+                    <div class="hole-stat-value" id="playerCount">0</div>
+                    <div class="hole-stat-label">플레이어</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 메인 콘텐츠 -->
+        <div class="main-content" id="mainContent">
+            <!-- 골퍼 카드들 또는 빈 상태 -->
+        </div>
+        
+        <!-- 빠른 입력 패널 -->
+        <div class="quick-input-panel" id="quickInputPanel" style="display: none;">
+            <div class="quick-input-header">
+                <span id="selectedGolferName">골퍼명</span> - <span id="selectedHole">1</span>번홀
+                <button class="close-quick-btn" onclick="closeQuickInput()">✕</button>
+            </div>
+            <div class="score-buttons">
+                <button class="score-btn" onclick="quickAddScore(1)">1타</button>
+                <button class="score-btn" onclick="quickAddScore(2)">2타</button>
+                <button class="score-btn" onclick="quickAddScore(3)">3타</button>
+                <button class="score-btn" onclick="quickAddScore(4)">4타</button>
+                <button class="score-btn" onclick="quickAddScore(5)">5타</button>
+                <button class="score-btn" onclick="quickAddScore(6)">6타</button>
+                <button class="score-btn" onclick="quickAddScore(7)">7타</button>
+                <button class="score-btn" onclick="quickAddScore(8)">8타</button>
+                <button class="score-btn" onclick="quickAddScore(9)">9타</button>
+                <button class="score-btn" onclick="quickAddScore(10)">10타</button>
+            </div>
+            <div class="voice-input-simple">
+                <button class="simple-voice-btn" id="simpleVoiceBtn" onclick="toggleSimpleVoice()">
+                    🎤 숫자만 말하세요
+                </button>
+                <div class="simple-transcript" id="simpleTranscript">음성으로 숫자를 말하세요</div>
+            </div>
+        </div>
+        
+        <!-- 하단 고정 영역 -->
+        <div class="bottom-section">
+            <div class="voice-section">
+                <button class="voice-btn" id="voiceBtn" onclick="toggleVoice()">
+                    <span>🎤</span>
+                    <span id="voiceBtnText">음성 인식 시작</span>
+                </button>
+                <div class="transcript" id="transcript">준비됨</div>
+            </div>
+            <div class="quick-actions">
+                <button class="quick-btn" onclick="previousHole()">◀ 이전</button>
+                <button class="quick-btn" onclick="nextHole()">다음 ▶</button>
+                <button class="quick-btn" onclick="showMenu()">메뉴</button>
+                <button class="quick-btn" onclick="saveGame()">저장</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 편집 모달 -->
+    <div id="editModal" class="modal" onclick="closeModalOnBackground(event)">
+        <div class="modal-content">
+            <h3 class="modal-title" id="modalTitle">편집</h3>
+            <input type="text" id="modalInput" class="modal-input">
+            <div class="modal-buttons">
+                <button class="modal-btn save" onclick="saveEdit()">저장</button>
+                <button class="modal-btn cancel" onclick="closeModal()">취소</button>
+                <button class="modal-btn delete" onclick="deleteItem()" id="deleteBtn" style="display: none;">삭제</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 수동 입력 모달 -->
+    <div id="manualInputModal" class="modal" onclick="closeModalOnBackground(event)">
+        <div class="manual-input-modal">
+            <h3 class="modal-title">수동 입력 및 관리</h3>
+            
+            <!-- 탭 버튼 -->
+            <div class="tab-buttons">
+                <button class="tab-btn active" onclick="switchTab('score', this)">스코어 입력</button>
+                <button class="tab-btn" onclick="switchTab('manage', this)">골퍼 관리</button>
+            </div>
+            
+            <!-- 스코어 입력 탭 -->
+            <div id="scoreTab" class="tab-content">
+                <div class="manual-section">
+                    <h4>골퍼 선택</h4>
+                    <select id="golferSelect" class="golfer-select">
+                        <option value="">골퍼를 선택하세요</option>
+                    </select>
+                </div>
+                
+                <div class="manual-section">
+                    <h4>스코어 입력</h4>
+                    <div class="hole-score-input">
+                        <input type="number" id="holeInput" class="hole-input" placeholder="홀" min="1" max="18">
+                        <input type="number" id="scoreInput" class="score-input" placeholder="타수" min="1" max="15">
+                    </div>
+                </div>
+                
+                <div class="modal-buttons">
+                    <button class="modal-btn save" onclick="saveManualInput()">입력</button>
+                    <button class="modal-btn cancel" onclick="closeManualInput()">취소</button>
+                </div>
+            </div>
+            
+            <!-- 골퍼 관리 탭 -->
+            <div id="manageTab" class="tab-content" style="display: none;">
+                <div class="manual-section">
+                    <h4>등록된 골퍼</h4>
+                    <div class="golfer-list" id="golferManageList">
+                        <!-- 골퍼 목록이 여기에 표시됩니다 -->
+                    </div>
+                </div>
+                
+                <div class="manual-section">
+                    <h4>새 골퍼 추가</h4>
+                    <div class="add-golfer-input">
+                        <input type="text" id="newGolferName" class="golfer-name-input" placeholder="골퍼 이름 입력" maxlength="10">
+                        <button class="add-golfer-btn" onclick="addNewGolfer()">추가</button>
+                    </div>
+                </div>
+                
+                <div class="modal-buttons">
+                    <button class="modal-btn cancel" onclick="closeManualInput()">닫기</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 팝업 메뉴 -->
+    <div id="popupMenu" class="popup-menu">
+        <div class="popup-item" onclick="showAddGolferModal()">👤 골퍼 추가</div>
+        <div class="popup-item" onclick="showManualInput()">✏️ 수동 입력</div>
+        <div class="popup-item" onclick="testVoiceInput()">🧪 음성 테스트</div>
+        <div class="popup-item" onclick="changeHoleCount()">🏌️ 홀 수 변경</div>
+        <div class="popup-item" onclick="resetGame()">🔄 새 게임</div>
+        <div class="popup-item" onclick="showHistory()">📊 기록 보기</div>
+        <div class="popup-item" onclick="showHelp()">❓ 도움말</div>
+    </div>
+    
+    <!-- 피드백 메시지 -->
+    <div id="feedback" class="feedback" style="display: none;"></div>
+
+    <script>
+        // 전역 변수
+        let recognition = null;
+        let isListening = false;
+        let golfers = [];
+        let currentGolfer = null;
+        let currentHole = 1;
+        let totalHoles = 18;
+        let scores = {};
+        let mode = 'golfer';
+        let editingData = null;
+        let touchTimer = null;
+        
+        // 한국어 숫자 변환 (개선됨)
+        const koreanToNumber = (korean) => {
+            console.log('🔤 한국어 숫자 변환 시도:', korean);
+            
+            const koreanNumbers = {
+                '영': 0, '공': 0, '제로': 0,
+                '일': 1, '하나': 1, '원': 1, '한': 1,
+                '이': 2, '둘': 2, '투': 2, '두': 2,
+                '삼': 3, '셋': 3, '세': 3, '쓰리': 3,
+                '사': 4, '넷': 4, '네': 4, '포': 4,
+                '오': 5, '다섯': 5, '파이브': 5,
+                '육': 6, '여섯': 6, '식스': 6,
+                '칠': 7, '일곱': 7, '세븐': 7,
+                '팔': 8, '여덟': 8, '에이트': 8,
+                '구': 9, '아홉': 9, '나인': 9,
+                '십': 10, '열': 10, '텐': 10,
+                '십일': 11, '열하나': 11,
+                '십이': 12, '열둘': 12,
+                '십삼': 13, '열셋': 13,
+                '십사': 14, '열넷': 14,
+                '십오': 15, '열다섯': 15
+            };
+            
+            const cleaned = korean.trim().toLowerCase();
+            console.log('🔤 정리된 입력:', cleaned);
+            
+            // 직접 매칭 시도
+            let result = koreanNumbers[cleaned];
+            console.log('🔤 직접 매칭 결과:', result);
+            
+            // 만약 직접 매칭이 안 되면 부분 매칭 시도
+            if (!result) {
+                for (const [key, value] of Object.entries(koreanNumbers)) {
+                    if (cleaned.includes(key) || key.includes(cleaned)) {
+                        result = value;
+                        console.log('🔤 부분 매칭 성공:', key, '->', value);
+                        break;
+                    }
+                }
+            }
+            
+            console.log('🔤 최종 변환 결과:', cleaned, '->', result);
+            return result;
+        };
+        
+        // 이름 추출
+        const extractName = (input) => {
+            const removeWords = [
+                '골퍼', '플레이어', '선수', '사람', '님', '씨', '추가', '등록',
+                '저장', '입력', '넣어', '해줘', '해', '줘', '부탁', '합니다',
+                '이름은', '이름', '은', '는', '이', '가', '를', '을', '의'
+            ];
+            
+            let cleanedName = input.trim();
+            removeWords.forEach(word => {
+                const regex = new RegExp(`\\s*${word}\\s*`, 'gi');
+                cleanedName = cleanedName.replace(regex, ' ');
+            });
+            
+            cleanedName = cleanedName.replace(/\s+/g, ' ').trim();
+            
+            if (cleanedName.length < 2 || cleanedName.length > 5) {
+                return null;
+            }
+            
+            if (!/^[가-힣\s]+$/.test(cleanedName)) {
+                return null;
+            }
+            
+            return cleanedName;
+        };
+        
+        // 스코어 파싱 (완전 재작성)
+        const parseScoreCommand = (input) => {
+            const cleanedInput = input.trim();
+            console.log('🎤 원본 음성 입력:', cleanedInput);
+            
+            // 1. "김영희 3타" 또는 "김영희 삼타" 패턴 - 더 정확한 정규식
+            let playerScorePattern = /([\가-힣]{2,4})\s+([가-힣\d]+)타?$/;
+            let playerScoreMatch = cleanedInput.match(playerScorePattern);
+            
+            if (playerScoreMatch) {
+                const playerName = playerScoreMatch[1];
+                const scoreText = playerScoreMatch[2].replace(/타$/, '').trim();
+                
+                console.log('🎯 플레이어 매칭:', playerName, '스코어 텍스트:', scoreText);
+                
+                // 숫자 변환 시도
+                let score = null;
+                
+                // 먼저 아라비아 숫자 시도
+                if (/^\d+$/.test(scoreText)) {
+                    score = parseInt(scoreText);
+                    console.log('🔢 아라비아 숫자 인식:', scoreText, '->', score);
+                } else {
+                    // 한국어 숫자 시도
+                    score = koreanToNumber(scoreText);
+                    console.log('🔤 한국어 숫자 인식:', scoreText, '->', score);
+                }
+                
+                if (score && score > 0 && score < 15) {
+                    console.log('✅ 플레이어 스코어 파싱 성공:', playerName, score);
+                    return { type: 'player_score', playerName, score };
+                } else {
+                    console.log('❌ 스코어 유효성 검사 실패:', score);
+                }
+            }
+            
+            // 2. "김영희 1홀 3타" 패턴
+            let playerHoleScorePattern = /([\가-힣]{2,4})\s+(.+?)홀\s+(.+?)타?$/;
+            let playerHoleScoreMatch = cleanedInput.match(playerHoleScorePattern);
+            
+            if (playerHoleScoreMatch) {
+                const playerName = playerHoleScoreMatch[1];
+                const holeText = playerHoleScoreMatch[2].trim();
+                const scoreText = playerHoleScoreMatch[3].replace(/타$/, '').trim();
+                
+                let hole = null;
+                let score = null;
+                
+                // 홀 번호 변환
+                if (/^\d+$/.test(holeText)) {
+                    hole = parseInt(holeText);
+                } else {
+                    hole = koreanToNumber(holeText);
+                }
+                
+                // 스코어 변환
+                if (/^\d+$/.test(scoreText)) {
+                    score = parseInt(scoreText);
+                } else {
+                    score = koreanToNumber(scoreText);
+                }
+                
+                console.log('🏌️ 홀별 스코어 파싱:', playerName, hole, score);
+                
+                if (hole && hole > 0 && hole <= totalHoles && score && score > 0 && score < 15) {
+                    console.log('✅ 홀별 스코어 파싱 성공');
+                    return { type: 'player_hole_score', playerName, hole, score };
+                }
+            }
+            
+            // 3. 단순 숫자 ("3", "삼" 등)
+            let simpleNumber = null;
+            if (/^\d+$/.test(cleanedInput)) {
+                simpleNumber = parseInt(cleanedInput);
+                console.log('🔢 단순 아라비아 숫자:', simpleNumber);
+            } else {
+                simpleNumber = koreanToNumber(cleanedInput);
+                console.log('🔤 단순 한국어 숫자:', cleanedInput, '->', simpleNumber);
+            }
+            
+            if (simpleNumber && simpleNumber > 0 && simpleNumber < 15) {
+                console.log('✅ 단순 스코어 파싱 성공:', simpleNumber);
+                return { type: 'simple_score', score: simpleNumber };
+            }
+            
+            console.log('❌ 파싱 실패');
+            return null;
+        };
+        
+        // 초기화
+        function initApp() {
+            initSpeechRecognition();
+            loadGameFromStorage();
+            updateDisplay();
+            
+            // iOS 홈 화면 추가 안내
+            if (window.navigator.standalone === false && /iPhone|iPad|iPod/.test(navigator.userAgent)) {
+                setTimeout(() => {
+                    if (!localStorage.getItem('install-prompted')) {
+                        showInstallPrompt();
+                    }
+                }, 3000);
+            }
+        }
+        
+        function showInstallPrompt() {
+            const prompt = document.createElement('div');
+            prompt.className = 'install-prompt';
+            prompt.innerHTML = `
+                <strong>💡 홈 화면에 추가하세요!</strong><br>
+                하단 공유 버튼 → "홈 화면에 추가"<br>
+                앱처럼 사용할 수 있습니다!
+            `;
+            document.querySelector('.main-content').prepend(prompt);
+            localStorage.setItem('install-prompted', 'true');
+            
+            setTimeout(() => {
+                prompt.style.display = 'none';
+            }, 10000);
+        }
+        
+        function initSpeechRecognition() {
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.continuous = true;
+                recognition.interimResults = true;
+                recognition.lang = 'ko-KR';
+                
+                recognition.onresult = function(event) {
+                    let finalTranscript = '';
+                    let interimTranscript = '';
+                    
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        const transcript = event.results[i][0].transcript;
+                        if (event.results[i].isFinal) {
+                            finalTranscript += transcript;
+                        } else {
+                            interimTranscript += transcript;
+                        }
+                    }
+                    
+                    // 실시간으로 인식되는 텍스트 표시
+                    const displayText = finalTranscript || interimTranscript || '듣는 중...';
+                    document.getElementById('transcript').textContent = displayText;
+                    
+                    // 최종 결과만 처리
+                    if (finalTranscript.trim()) {
+                        console.log('🎤 최종 음성 인식 결과:', finalTranscript);
+                        handleVoiceInput(finalTranscript);
+                        
+                        // 연속 음성 인식을 위해 잠시 후 다시 시작
+                        setTimeout(() => {
+                            if (isListening) {
+                                try {
+                                    recognition.start();
+                                    document.getElementById('transcript').textContent = '다음 명령을 말하세요...';
+                                } catch(e) {
+                                    console.log('음성 인식 재시작 중...');
+                                }
+                            }
+                        }, 1500);
+                    }
+                };
+                
+                recognition.onerror = function(event) {
+                    console.error('음성 인식 오류:', event.error);
+                    
+                    // 'no-speech' 오류는 단순히 재시작
+                    if (event.error === 'no-speech') {
+                        if (isListening) {
+                            setTimeout(() => {
+                                try {
+                                    recognition.start();
+                                    document.getElementById('transcript').textContent = '다시 말씀하세요...';
+                                } catch(e) {
+                                    console.log('음성 인식 재시작 중...');
+                                }
+                            }, 1000);
+                        }
+                    } else {
+                        showFeedback('음성 인식 오류: ' + event.error, 'error');
+                        if (isListening) {
+                            setTimeout(() => {
+                                try {
+                                    recognition.start();
+                                } catch(e) {
+                                    console.log('음성 인식 재시작 실패');
+                                }
+                            }, 2000);
+                        }
+                    }
+                };
+                
+                recognition.onend = function() {
+                    console.log('음성 인식 종료됨');
+                    if (isListening) {
+                        // 연속 모드에서는 자동으로 재시작
+                        setTimeout(() => {
+                            try {
+                                recognition.start();
+                                document.getElementById('transcript').textContent = '듣는 중...';
+                            } catch(e) {
+                                console.log('음성 인식 재시작 중...');
+                            }
+                        }, 1000);
+                    }
+                };
+            }
+        }
+        
+        function toggleVoice() {
+            if (!recognition) return;
+            
+            if (isListening) {
+                recognition.stop();
+                stopListening();
+            } else {
+                recognition.start();
+                startListening();
+            }
+        }
+        
+        function startListening() {
+            isListening = true;
+            const btn = document.getElementById('voiceBtn');
+            btn.classList.add('listening');
+            document.getElementById('voiceBtnText').textContent = '듣는 중...';
+            document.getElementById('transcript').textContent = '말씀하세요...';
+        }
+        
+        function stopListening() {
+            isListening = false;
+            const btn = document.getElementById('voiceBtn');
+            btn.classList.remove('listening');
+            document.getElementById('voiceBtnText').textContent = '음성 인식 시작';
+        }
+        
+        function handleVoiceInput(input) {
+            console.log('🎯 처리할 음성 입력:', input);
+            console.log('🎮 현재 모드:', mode);
+            console.log('👤 현재 골퍼:', currentGolfer ? currentGolfer.name : '없음');
+            console.log('🏌️ 현재 홀:', currentHole);
+            
+            if (mode === 'golfer') {
+                const name = extractName(input);
+                if (name && !golfers.find(g => g.name === name)) {
+                    addGolfer(name);
+                    showFeedback(`${name} 추가!`);
+                } else if (name) {
+                    showFeedback('이미 등록된 골퍼입니다', 'error');
+                } else {
+                    showFeedback('올바른 이름을 말해주세요', 'error');
+                }
+            } else {
+                const command = parseScoreCommand(input);
+                console.log('🎯 파싱 결과:', command);
+                
+                if (command) {
+                    console.log(`🎮 명령 실행: ${command.type}`);
+                    switch (command.type) {
+                        case 'player_score':
+                            console.log(`👤 플레이어 스코어: ${command.playerName} → ${command.score}타`);
+                            handlePlayerScore(command.playerName, currentHole, command.score);
+                            break;
+                        case 'player_hole_score':
+                            console.log(`🏌️ 홀별 스코어: ${command.playerName} ${command.hole}홀 → ${command.score}타`);
+                            handlePlayerScore(command.playerName, command.hole, command.score);
+                            break;
+                        case 'simple_score':
+                            console.log(`🎯 단순 스코어: ${command.score}타`);
+                            if (currentGolfer) {
+                                console.log(`💾 스코어 저장: ${currentGolfer.name} ${currentHole}홀 ${command.score}타`);
+                                addScore(currentGolfer.id, currentHole, command.score);
+                                showFeedback(`${currentGolfer.name} ${currentHole}번홀 ${command.score}타!`);
+                                
+                                // 자동 다음 홀 이동 (마지막 홀이 아닌 경우)
+                                setTimeout(() => {
+                                    if (currentHole < totalHoles) {
+                                        currentHole++;
+                                        updateDisplay();
+                                        console.log(`➡️ 자동 홀 이동: ${currentHole}번 홀`);
+                                    }
+                                }, 1000);
+                            } else {
+                                showFeedback('골퍼를 먼저 선택하세요', 'error');
+                            }
+                            break;
+                    }
+                } else {
+                    console.log('❌ 파싱 실패 - 명령을 인식할 수 없습니다');
+                    showFeedback('인식 실패! 다시 시도하세요', 'error');
+                }
+            }
+        }
+        
+        function handlePlayerScore(playerName, hole, score) {
+            const golfer = golfers.find(g => 
+                g.name === playerName || 
+                g.name.includes(playerName) || 
+                playerName.includes(g.name)
+            );
+            
+            if (golfer) {
+                addScore(golfer.id, hole, score);
+                currentGolfer = golfer;
+                // 홀별 스코어 입력 시에만 현재 홀 변경
+                if (hole !== currentHole) {
+                    currentHole = hole;
+                }
+                updateDisplay();
+                showFeedback(`${golfer.name} ${hole}번홀 ${score}타!`);
+            } else {
+                showFeedback(`${playerName} 골퍼를 찾을 수 없습니다`, 'error');
+            }
+        }
+        
+        function addGolfer(name) {
+            const golfer = {
+                id: Date.now() + Math.random(),
+                name: name
+            };
+            golfers.push(golfer);
+            
+            if (!currentGolfer) {
+                currentGolfer = golfer;
+            }
+            
+            updateDisplay();
+            return golfer;
+        }
+        
+        function addScore(golferId, hole, score) {
+            scores[`${golferId}-${hole}`] = score;
+            updateDisplay();
+        }
+        
+        function getTotalScore(golferId) {
+            let total = 0;
+            for (let hole = 1; hole <= totalHoles; hole++) {
+                const score = scores[`${golferId}-${hole}`];
+                if (score) total += score;
+            }
+            return total;
+        }
+        
+        function setMode(newMode) {
+            mode = newMode;
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.includes(mode === 'golfer' ? '골퍼' : '스코어'));
+            });
+            showFeedback(mode === 'golfer' ? '골퍼 추가 모드' : '스코어 입력 모드');
+        }
+        
+        function updateDisplay() {
+            document.getElementById('currentHole').textContent = currentHole;
+            document.getElementById('totalHoles').textContent = totalHoles;
+            document.getElementById('playerCount').textContent = golfers.length;
+            
+            const content = document.getElementById('mainContent');
+            
+            if (golfers.length === 0) {
+                content.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">⛳</div>
+                        <div class="empty-text">골퍼를 추가하세요</div>
+                        <div class="empty-hint">음성 버튼을 누르고 이름을 말하세요</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            golfers.forEach((golfer, index) => {
+                const total = getTotalScore(golfer.id);
+                const currentScore = scores[`${golfer.id}-${currentHole}`];
+                const isActive = currentGolfer && currentGolfer.id === golfer.id;
+                
+                html += `
+                    <div class="golfer-card ${isActive ? 'active' : ''}" onclick="selectGolfer('${golfer.id}')">
+                        <div class="golfer-header">
+                            <div class="golfer-name" onclick="editGolferName(event, ${index})">${golfer.name}</div>
+                            <div class="golfer-total">${total}</div>
+                        </div>
+                        <div class="current-hole-score">
+                            ${currentHole}번 홀: ${currentScore || '-'}타
+                        </div>
+                        <div class="score-dots">
+                            ${generateScoreDots(golfer.id)}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            content.innerHTML = html;
+        }
+        
+        function generateScoreDots(golferId) {
+            let html = '';
+            
+            // 모든 홀을 표시하되 스크롤 가능하게
+            for (let hole = 1; hole <= totalHoles; hole++) {
+                const score = scores[`${golferId}-${hole}`];
+                const isCurrent = hole === currentHole;
+                const isCompleted = score !== undefined;
+                
+                let className = 'score-dot';
+                if (isCurrent) className += ' current';
+                else if (isCompleted) className += ' completed';
+                
+                html += `
+                    <div class="${className}" 
+                         onclick="handleHoleClick(event, '${golferId}', ${hole})"
+                         ontouchstart="startLongPress(event, '${golferId}', ${hole})"
+                         ontouchend="endLongPress()">
+                        <span class="hole-label">${hole}</span>
+                        ${score || '-'}
+                    </div>
+                `;
+            }
+            
+            return html;
+        }
+        
+        function selectGolfer(golferId) {
+            currentGolfer = golfers.find(g => g.id == golferId);
+            updateDisplay();
+            
+            // 빠른 입력 패널 열기
+            showQuickInput();
+        }
+        
+        function selectHole(hole) {
+            currentHole = hole;
+            updateDisplay();
+            showFeedback(`${hole}번 홀로 이동`);
+        }
+        
+        function handleHoleClick(event, golferId, hole) {
+            event.stopPropagation();
+            const score = scores[`${golferId}-${hole}`];
+            
+            if (score) {
+                // 스코어가 있으면 편집
+                editScore(event, golferId, hole);
+            } else {
+                // 스코어가 없으면 홀 이동
+                selectHole(hole);
+            }
+        }
+        
+        function editGolferName(event, index) {
+            event.stopPropagation();
+            const golfer = golfers[index];
+            editingData = { type: 'golferName', index };
+            openModal(`이름 수정`, golfer.name, 'text');
+        }
+        
+        function editScore(event, golferId, hole) {
+            event.stopPropagation();
+            const score = scores[`${golferId}-${hole}`] || '';
+            const golfer = golfers.find(g => g.id == golferId);
+            editingData = { type: 'score', golferId, hole };
+            openModal(`${hole}번 홀 스코어`, score, 'number');
+        }
+        
+        function startLongPress(event, golferId, hole) {
+            event.preventDefault();
+            touchTimer = setTimeout(() => {
+                if (confirm(`${hole}번 홀 스코어를 삭제할까요?`)) {
+                    delete scores[`${golferId}-${hole}`];
+                    updateDisplay();
+                    showFeedback('삭제됨');
+                }
+            }, 1000);
+        }
+        
+        function endLongPress() {
+            clearTimeout(touchTimer);
+        }
+        
+        function openModal(title, value, type = 'number') {
+            document.getElementById('modalTitle').textContent = title;
+            const input = document.getElementById('modalInput');
+            input.value = value;
+            input.type = type === 'number' ? 'tel' : 'text';
+            input.pattern = type === 'number' ? '[0-9]*' : null;
+            input.inputmode = type === 'number' ? 'numeric' : 'text';
+            
+            // 삭제 버튼 표시 여부 결정
+            const deleteBtn = document.getElementById('deleteBtn');
+            if (editingData && (editingData.type === 'score' || editingData.type === 'golferName')) {
+                deleteBtn.style.display = 'inline-block';
+            } else {
+                deleteBtn.style.display = 'none';
+            }
+            
+            document.getElementById('editModal').style.display = 'block';
+            setTimeout(() => input.focus(), 100);
+        }
+        
+        function closeModal() {
+            document.getElementById('editModal').style.display = 'none';
+            editingData = null;
+        }
+        
+        function closeModalOnBackground(event) {
+            if (event.target.classList.contains('modal')) {
+                closeModal();
+                closeManualInput();
+            }
+        }
+        
+        function saveEdit() {
+            const value = document.getElementById('modalInput').value.trim();
+            
+            if (editingData.type === 'golferName') {
+                if (value && value.length >= 2) {
+                    golfers[editingData.index].name = value;
+                    updateDisplay();
+                    showFeedback('이름 변경됨');
+                }
+            } else if (editingData.type === 'score') {
+                const score = parseInt(value);
+                if (score && score > 0 && score < 15) {
+                    addScore(editingData.golferId, editingData.hole, score);
+                    showFeedback('스코어 저장됨');
+                } else if (value === '') {
+                    delete scores[`${editingData.golferId}-${editingData.hole}`];
+                    updateDisplay();
+                    showFeedback('스코어 삭제됨');
+                }
+            } else if (editingData.type === 'addGolfer') {
+                if (value && value.length >= 2 && !golfers.find(g => g.name === value)) {
+                    addGolfer(value);
+                    showFeedback(`${value} 추가됨!`);
+                } else if (golfers.find(g => g.name === value)) {
+                    showFeedback('이미 등록된 골퍼입니다', 'error');
+                } else {
+                    showFeedback('올바른 이름을 입력하세요', 'error');
+                }
+            }
+            
+            closeModal();
+        }
+        
+        function deleteItem() {
+            if (!editingData) return;
+            
+            if (editingData.type === 'golferName') {
+                if (confirm('이 골퍼를 삭제할까요? 모든 스코어도 함께 삭제됩니다.')) {
+                    const golferId = golfers[editingData.index].id;
+                    
+                    // 골퍼의 모든 스코어 삭제
+                    Object.keys(scores).forEach(key => {
+                        if (key.startsWith(`${golferId}-`)) {
+                            delete scores[key];
+                        }
+                    });
+                    
+                    // 골퍼 삭제
+                    golfers.splice(editingData.index, 1);
+                    
+                    // 현재 골퍼가 삭제된 골퍼인 경우 다른 골퍼로 변경
+                    if (currentGolfer && currentGolfer.id === golferId) {
+                        currentGolfer = golfers.length > 0 ? golfers[0] : null;
+                    }
+                    
+                    updateDisplay();
+                    showFeedback('골퍼 삭제됨');
+                }
+            } else if (editingData.type === 'score') {
+                if (confirm('이 스코어를 삭제할까요?')) {
+                    delete scores[`${editingData.golferId}-${editingData.hole}`];
+                    updateDisplay();
+                    showFeedback('스코어 삭제됨');
+                }
+            }
+            
+            closeModal();
+        }
+        
+        function showAddGolferModal() {
+            hideMenu();
+            editingData = { type: 'addGolfer' };
+            openModal('새 골퍼 추가', '', 'text');
+        }
+        
+        // 빠른 입력 패널 관련 함수들
+        let simpleRecognition = null;
+        let isSimpleListening = false;
+        
+        function showQuickInput() {
+            if (!currentGolfer) return;
+            
+            document.getElementById('selectedGolferName').textContent = currentGolfer.name;
+            document.getElementById('selectedHole').textContent = currentHole;
+            
+            const panel = document.getElementById('quickInputPanel');
+            panel.style.display = 'block';
+            setTimeout(() => panel.classList.add('show'), 10);
+            
+            // 간단한 음성 인식 초기화
+            initSimpleVoiceRecognition();
+        }
+        
+        function closeQuickInput() {
+            const panel = document.getElementById('quickInputPanel');
+            panel.classList.remove('show');
+            setTimeout(() => panel.style.display = 'none', 300);
+            
+            // 음성 인식 중지
+            if (isSimpleListening && simpleRecognition) {
+                simpleRecognition.stop();
+            }
+        }
+        
+        function quickAddScore(score) {
+            if (!currentGolfer) return;
+            
+            addScore(currentGolfer.id, currentHole, score);
+            showFeedback(`${currentGolfer.name} ${currentHole}번홀 ${score}타!`);
+            
+            // 다음 홀로 자동 이동
+            setTimeout(() => {
+                if (currentHole < totalHoles) {
+                    currentHole++;
+                    document.getElementById('selectedHole').textContent = currentHole;
+                    updateDisplay();
+                }
+            }, 500);
+        }
+        
+        function initSimpleVoiceRecognition() {
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                simpleRecognition = new SpeechRecognition();
+                simpleRecognition.continuous = false;
+                simpleRecognition.interimResults = true;
+                simpleRecognition.lang = 'ko-KR';
+                
+                simpleRecognition.onresult = function(event) {
+                    let transcript = '';
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        if (event.results[i].isFinal) {
+                            transcript = event.results[i][0].transcript;
+                        }
+                    }
+                    
+                    document.getElementById('simpleTranscript').textContent = transcript || '듣는 중...';
+                    
+                    if (transcript.trim()) {
+                        handleSimpleVoiceInput(transcript);
+                    }
+                };
+                
+                simpleRecognition.onerror = function(event) {
+                    console.error('간단 음성 인식 오류:', event.error);
+                    document.getElementById('simpleTranscript').textContent = '다시 시도하세요';
+                    stopSimpleListening();
+                };
+                
+                simpleRecognition.onend = function() {
+                    stopSimpleListening();
+                };
+            }
+        }
+        
+        function toggleSimpleVoice() {
+            if (!simpleRecognition) return;
+            
+            if (isSimpleListening) {
+                simpleRecognition.stop();
+            } else {
+                simpleRecognition.start();
+                startSimpleListening();
+            }
+        }
+        
+        function startSimpleListening() {
+            isSimpleListening = true;
+            const btn = document.getElementById('simpleVoiceBtn');
+            btn.classList.add('listening');
+            btn.textContent = '🎤 듣는 중...';
+            document.getElementById('simpleTranscript').textContent = '숫자를 말하세요';
+        }
+        
+        function stopSimpleListening() {
+            isSimpleListening = false;
+            const btn = document.getElementById('simpleVoiceBtn');
+            btn.classList.remove('listening');
+            btn.textContent = '🎤 숫자만 말하세요';
+        }
+        
+        function handleSimpleVoiceInput(input) {
+            console.log('🎯 간단 음성 입력:', input);
+            
+            // 숫자만 추출하는 간단한 방식
+            let score = null;
+            
+            // 아라비아 숫자 찾기
+            const numberMatch = input.match(/\d+/);
+            if (numberMatch) {
+                score = parseInt(numberMatch[0]);
+            } else {
+                // 한국어 숫자 변환
+                score = koreanToNumber(input.trim());
+            }
+            
+            if (score && score > 0 && score <= 15) {
+                console.log('✅ 스코어 인식 성공:', score);
+                quickAddScore(score);
+            } else {
+                console.log('❌ 스코어 인식 실패');
+                document.getElementById('simpleTranscript').textContent = '1-15 사이 숫자를 말하세요';
+            }
+        }
+        
+        // 수동 입력 관련 함수들
+        function showManualInput() {
+            hideMenu();
+            updateGolferSelect();
+            document.getElementById('holeInput').value = currentHole;
+            document.getElementById('scoreInput').value = '';
+            document.getElementById('manualInputModal').style.display = 'block';
+        }
+        
+        function updateGolferSelect() {
+            const select = document.getElementById('golferSelect');
+            select.innerHTML = '<option value="">골퍼를 선택하세요</option>';
+            
+            golfers.forEach(golfer => {
+                const option = document.createElement('option');
+                option.value = golfer.id;
+                option.textContent = golfer.name;
+                if (currentGolfer && currentGolfer.id === golfer.id) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+        }
+        
+        function saveManualInput() {
+            const golferId = document.getElementById('golferSelect').value;
+            const hole = parseInt(document.getElementById('holeInput').value);
+            const score = parseInt(document.getElementById('scoreInput').value);
+            
+            if (!golferId) {
+                showFeedback('골퍼를 선택하세요', 'error');
+                return;
+            }
+            
+            if (!hole || hole < 1 || hole > totalHoles) {
+                showFeedback('올바른 홀 번호를 입력하세요', 'error');
+                return;
+            }
+            
+            if (!score || score < 1 || score > 15) {
+                showFeedback('올바른 타수를 입력하세요', 'error');
+                return;
+            }
+            
+            addScore(golferId, hole, score);
+            const golfer = golfers.find(g => g.id == golferId);
+            showFeedback(`${golfer.name} ${hole}번홀 ${score}타 입력!`);
+            closeManualInput();
+        }
+        
+        function closeManualInput() {
+            document.getElementById('manualInputModal').style.display = 'none';
+            // 탭을 스코어 입력으로 리셋
+            switchTab('score');
+        }
+        
+        // 탭 전환 함수
+        function switchTab(tabName, element = null) {
+            // 탭 버튼 활성화 상태 변경
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // 클릭된 버튼에 active 클래스 추가
+            if (element) {
+                element.classList.add('active');
+            } else {
+                // element가 없으면 탭 이름으로 찾기
+                const targetBtn = tabName === 'score' ? 
+                    document.querySelector('.tab-btn:first-child') : 
+                    document.querySelector('.tab-btn:last-child');
+                targetBtn.classList.add('active');
+            }
+            
+            // 탭 내용 표시/숨김
+            document.getElementById('scoreTab').style.display = tabName === 'score' ? 'block' : 'none';
+            document.getElementById('manageTab').style.display = tabName === 'manage' ? 'block' : 'none';
+            
+            // 골퍼 관리 탭이 선택되면 골퍼 목록 업데이트
+            if (tabName === 'manage') {
+                updateGolferManageList();
+            }
+        }
+        
+        // 골퍼 관리 목록 업데이트
+        function updateGolferManageList() {
+            const listContainer = document.getElementById('golferManageList');
+            
+            if (golfers.length === 0) {
+                listContainer.innerHTML = '<div style="text-align: center; color: #666; padding: 20px;">등록된 골퍼가 없습니다</div>';
+                return;
+            }
+            
+            let html = '';
+            golfers.forEach((golfer, index) => {
+                const totalScore = getTotalScore(golfer.id);
+                const completedHoles = Object.keys(scores).filter(key => key.startsWith(`${golfer.id}-`)).length;
+                
+                html += `
+                    <div class="golfer-item">
+                        <div>
+                            <div class="golfer-name">${golfer.name}</div>
+                            <div style="font-size: 12px; color: #666;">${completedHoles}홀 완료 · 총 ${totalScore}타</div>
+                        </div>
+                        <div class="golfer-actions">
+                            <button class="golfer-action-btn edit-btn" onclick="editGolferFromManage(${index})">수정</button>
+                            <button class="golfer-action-btn delete-btn" onclick="deleteGolferFromManage(${index})">삭제</button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            listContainer.innerHTML = html;
+        }
+        
+        // 새 골퍼 추가 (골퍼 관리 탭에서)
+        function addNewGolfer() {
+            const nameInput = document.getElementById('newGolferName');
+            const name = nameInput.value.trim();
+            
+            if (!name || name.length < 2) {
+                showFeedback('2글자 이상 입력하세요', 'error');
+                return;
+            }
+            
+            if (golfers.find(g => g.name === name)) {
+                showFeedback('이미 등록된 골퍼입니다', 'error');
+                return;
+            }
+            
+            addGolfer(name);
+            nameInput.value = '';
+            updateGolferManageList();
+            updateGolferSelect();
+            showFeedback(`${name} 추가됨!`);
+        }
+        
+        // 골퍼 수정 (관리 탭에서)
+        function editGolferFromManage(index) {
+            const golfer = golfers[index];
+            editingData = { type: 'golferName', index };
+            
+            // 수동 입력 모달 닫기
+            closeManualInput();
+            
+            // 편집 모달 열기
+            setTimeout(() => {
+                openModal(`이름 수정`, golfer.name, 'text');
+            }, 100);
+        }
+        
+        // 골퍼 삭제 (관리 탭에서)
+        function deleteGolferFromManage(index) {
+            const golfer = golfers[index];
+            
+            if (confirm(`${golfer.name} 골퍼를 삭제할까요?\n모든 스코어도 함께 삭제됩니다.`)) {
+                const golferId = golfer.id;
+                
+                // 골퍼의 모든 스코어 삭제
+                Object.keys(scores).forEach(key => {
+                    if (key.startsWith(`${golferId}-`)) {
+                        delete scores[key];
+                    }
+                });
+                
+                // 골퍼 삭제
+                golfers.splice(index, 1);
+                
+                // 현재 골퍼가 삭제된 골퍼인 경우 다른 골퍼로 변경
+                if (currentGolfer && currentGolfer.id === golferId) {
+                    currentGolfer = golfers.length > 0 ? golfers[0] : null;
+                }
+                
+                updateGolferManageList();
+                updateGolferSelect();
+                updateDisplay();
+                showFeedback(`${golfer.name} 삭제됨`);
+            }
+        }
+        
+        function previousHole() {
+            if (currentHole > 1) {
+                currentHole--;
+                updateDisplay();
+                showFeedback(`${currentHole}번 홀`);
+            }
+        }
+        
+        function nextHole() {
+            if (currentHole < totalHoles) {
+                currentHole++;
+                updateDisplay();
+                showFeedback(`${currentHole}번 홀`);
+            }
+        }
+        
+        function showMenu() {
+            const menu = document.getElementById('popupMenu');
+            menu.style.display = 'block';
+            menu.style.bottom = '120px';
+            menu.style.left = '50%';
+            menu.style.transform = 'translateX(-50%)';
+            
+            setTimeout(() => {
+                document.addEventListener('click', hideMenu);
+            }, 100);
+        }
+        
+        function hideMenu() {
+            document.getElementById('popupMenu').style.display = 'none';
+            document.removeEventListener('click', hideMenu);
+        }
+        
+        function changeHoleCount() {
+            hideMenu();
+            totalHoles = totalHoles === 18 ? 9 : 18;
+            updateDisplay();
+            showFeedback(`${totalHoles}홀로 변경`);
+        }
+        
+        function resetGame() {
+            hideMenu();
+            if (confirm('새 게임을 시작할까요?')) {
+                golfers = [];
+                currentGolfer = null;
+                currentHole = 1;
+                scores = {};
+                updateDisplay();
+                showFeedback('새 게임 시작');
+            }
+        }
+        
+        function showHistory() {
+            hideMenu();
+            showFeedback('기록 보기 준비 중...');
+        }
+        
+        function testVoiceInput() {
+            hideMenu();
+            
+            // 먼저 테스트 골퍼 추가
+            if (golfers.length === 0) {
+                addGolfer('김영희');
+                addGolfer('박민수');
+                setMode('score');
+                showFeedback('테스트 골퍼 추가됨');
+            }
+            
+            const testInputs = [
+                "김영희 3타",
+                "박민수 4타", 
+                "김영희 삼타",
+                "3",
+                "사"
+            ];
+            
+            let testIndex = 0;
+            function runNextTest() {
+                if (testIndex < testInputs.length) {
+                    const testInput = testInputs[testIndex];
+                    console.log(`🧪 테스트 ${testIndex + 1}: "${testInput}"`);
+                    showFeedback(`테스트 ${testIndex + 1}: ${testInput}`);
+                    
+                    // 직접 파싱 테스트
+                    console.log('=== 파싱 테스트 시작 ===');
+                    const result = parseScoreCommand(testInput);
+                    console.log('파싱 결과:', result);
+                    console.log('=== 파싱 테스트 끝 ===');
+                    
+                    setTimeout(() => {
+                        handleVoiceInput(testInput);
+                        testIndex++;
+                        if (testIndex < testInputs.length) {
+                            setTimeout(runNextTest, 3000);
+                        } else {
+                            showFeedback('테스트 완료!');
+                        }
+                    }, 1000);
+                }
+            }
+            
+            runNextTest();
+        }
+        
+        // 개별 테스트 함수 (콘솔에서 직접 호출 가능)
+        function debugParseScore(input) {
+            console.log(`🐛 디버깅: "${input}"`);
+            const result = parseScoreCommand(input);
+            console.log('결과:', result);
+            return result;
+        }
+        
+        function showHelp() {
+            hideMenu();
+            alert(`🏌️ 개선된 사용 방법
+
+🎯 빠른 스코어 입력:
+1. 골퍼 카드를 터치하면 입력 패널이 열립니다
+2. 1-10타 버튼을 누르거나 음성으로 숫자만 말하세요
+3. 자동으로 다음 홀로 이동합니다
+
+👤 골퍼 관리:
+- 메뉴 → 골퍼 추가 또는 골퍼 모드에서 이름 말하기
+- 골퍼 이름 터치하여 수정/삭제
+
+📝 편집:
+- 스코어 터치: 수정/삭제
+- 홀 번호 터치: 해당 홀로 이동
+
+🎤 음성 입력:
+- 복잡한 명령 대신 숫자만 말하세요 ("삼", "4" 등)
+- 더 정확하고 빠른 인식
+
+💡 홈 화면에 추가하여 앱처럼 사용하세요!`);
+        }
+        
+        function showFeedback(message, type = 'success') {
+            const feedback = document.getElementById('feedback');
+            feedback.textContent = message;
+            feedback.style.display = 'block';
+            
+            setTimeout(() => {
+                feedback.style.display = 'none';
+            }, 2000);
+        }
+        
+        function saveGame() {
+            const gameData = {
+                date: new Date().toISOString(),
+                golfers: golfers,
+                scores: scores,
+                totalHoles: totalHoles,
+                currentHole: currentHole
+            };
+            
+            localStorage.setItem('golf-game', JSON.stringify(gameData));
+            showFeedback('저장 완료!');
+        }
+        
+        function loadGameFromStorage() {
+            const saved = localStorage.getItem('golf-game');
+            if (saved) {
+                const gameData = JSON.parse(saved);
+                golfers = gameData.golfers || [];
+                scores = gameData.scores || {};
+                totalHoles = gameData.totalHoles || 18;
+                currentHole = gameData.currentHole || 1;
+                currentGolfer = golfers.length > 0 ? golfers[0] : null;
+            }
+        }
+        
+        // 앱 시작
+        window.onload = function() {
+            initApp();
+        };
+        
+        // 뒤로가기 방지
+        history.pushState(null, null, location.href);
+        window.onpopstate = function () {
+            history.go(1);
+        };
+        
+        // 엔터키로 모달 저장
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                if (document.getElementById('editModal').style.display === 'block') {
+                    saveEdit();
+                } else if (document.getElementById('manualInputModal').style.display === 'block') {
+                    // 활성 탭에 따라 다른 동작
+                    if (document.getElementById('manageTab').style.display !== 'none') {
+                        // 골퍼 관리 탭에서 새 골퍼 이름 입력 중인 경우
+                        if (document.activeElement === document.getElementById('newGolferName')) {
+                            addNewGolfer();
+                        }
+                    } else {
+                        // 스코어 입력 탭인 경우
+                        saveManualInput();
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
